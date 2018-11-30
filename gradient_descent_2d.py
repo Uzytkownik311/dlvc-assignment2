@@ -5,6 +5,7 @@ import numpy as np
 import os
 import time
 from collections import namedtuple
+from math import floor
 
 Vec2 = namedtuple('Vec2', ['x1', 'x2'])
 
@@ -50,7 +51,25 @@ class Fn:
         # you can simply round and map to integers. if so, make sure not to set eps and step_size too low
         # for bonus points you can implement some form of interpolation (linear should be sufficient)
 
-        pass
+        boundary = self._fn.shape
+
+        if loc[0] < 0.0 or loc[1] < 0.0 or loc[0] > boundary[0] or loc[1] > boundary[1]:
+            raise ValueError("Location is beyond domain function, location: " + str(loc) +
+                             " horizontal function domain: (0, " + str(boundary[0]) +
+                             "), vertical function domain: (0, " + str(boundary[1]) + ").")
+
+        shift = (loc[0] - floor(loc[0]), loc[1] - floor(loc[1]))
+        base_x = int(floor(loc[0]))
+        base_y = int(floor(loc[1]))
+        top_left_corner = self._fn[base_x][base_y]
+        top_right_corner = self._fn[base_x][base_y+1]
+        bottom_left_corner = self._fn[base_x+1][base_y]
+        bottom_right_corner = self._fn[base_x+1][base_y+1]
+        local_grid_values = np.array([[top_left_corner, top_right_corner],
+                                      [bottom_left_corner, bottom_right_corner]])
+
+        interpolated_value = bilinear_interpolation(shift, local_grid_values)
+        return interpolated_value
 
 def grad(fn: Fn, loc: Vec2, eps: float) -> Vec2:
     '''
@@ -62,6 +81,25 @@ def grad(fn: Fn, loc: Vec2, eps: float) -> Vec2:
     # TODO implement one of the two versions presented in the lecture
 
     pass
+
+
+def bilinear_interpolation(shift: tuple, l_grid_value: np.ndarray):
+
+    """
+    It is function which applies Bilinear interpolation for one point
+    (for more info: https://en.wikipedia.org/wiki/Bilinear_interpolation).
+    :param shift: represents shit from pixel with the lowest value of coordinates x and y (top left corner)
+    :param l_grid_value: represents values of function in considered neighbourhood (four local grid points, matrix 2x2)
+    :return: interpolate value
+    """
+
+    first_vector = np.array([1.0 - shift[0], shift[0]])
+    second_vector = np.array([[1.0 - shift[1]], [shift[1]]])
+    first_mul = np.matmul(l_grid_value, second_vector)
+    result = np.matmul(first_vector, first_mul)
+
+    return result[0]
+
 
 if __name__ == '__main__':
     # parse args
@@ -83,6 +121,8 @@ if __name__ == '__main__':
     fn = Fn(args.fpath)
     vis = fn.visualize()
     loc = Vec2(args.sx1, args.sx2)
+
+    fn(loc)
 
     # perform gradient descent
 
