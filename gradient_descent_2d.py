@@ -141,7 +141,7 @@ if __name__ == '__main__':
     parser.add_argument('--step_size', type=float, default=10.0, help='Step size')
     parser.add_argument('--beta', type=float, default=0, help='Beta parameter of momentum (0 = no momentum)')
     parser.add_argument('--nesterov', action='store_true', help='Use Nesterov momentum')
-    parser.add_argument('--stop_condition', type=float, default=0.0001,
+    parser.add_argument('--stop_condition', type=float, default=0.001,
                         help='Program stops if location shift will be lower then this argument value')
     args = parser.parse_args()
 
@@ -162,12 +162,16 @@ if __name__ == '__main__':
     cv2.resizeWindow('Progress', 800, 800)
 
     current_loc = loc
-    v = np.ones(2)
+    v = np.zeros(2)
     while True:
         # TODO implement normal gradient descent, with momentum, and with nesterov momentum depending on the arguments (see lecture 4 slides)
         # visualize each iteration by drawing on vis using e.g. cv2.line()
         # break out of loop once done
-        grad_arr = np.array(grad(fn, current_loc, eps))
+        if nesterov:
+            grad_arr = np.array(grad(fn, np.add(current_loc, v), eps))
+        else:
+            grad_arr = np.array(grad(fn, current_loc, eps))
+
         v = beta*v - step_size*grad_arr
         old_loc = np.copy(current_loc)
         current_loc += v
