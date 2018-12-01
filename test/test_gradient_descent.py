@@ -5,7 +5,7 @@ import numpy as np
 import unittest
 
 
-class TestInterpolation(unittest.TestCase):
+class TestGradientDescent(unittest.TestCase):
 
     def test_interpolation(self):
         f_values_in_l_pixels = np.array([[20, 70], [50, 10]])
