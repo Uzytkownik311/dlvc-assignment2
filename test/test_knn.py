@@ -181,5 +181,6 @@ class TestKnn(unittest.TestCase):
         for result in results:
             self.assertEqual(np.sum(result), 1.0)
 
+
 if __name__ == "__main__":
     unittest.main()

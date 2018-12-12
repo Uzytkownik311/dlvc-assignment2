@@ -29,6 +29,7 @@ def type_cast(dtype: np.dtype) -> Op:
 
     return op
 
+
 def vectorize() -> Op:
     '''
     Vectorize numpy arrays via "numpy.ravel()".
@@ -36,21 +37,26 @@ def vectorize() -> Op:
 
     return np.ravel
 
+
 def hwc2chw() -> Op:
     '''
     Flip a 3D array with shape HWC to shape CHW.
     '''
 
-    # TODO implement (see np.transpose)
+    def op(sample: np.ndarray) -> np.ndarray:
+        return sample.transpose((2, 0, 1))
 
-    pass
+    return op
 
 def chw2hwc() -> Op:
     '''
     Flip a 3D array with shape CHW to HWC.
     '''
 
-    # TODO implement (see np.transpose)
+    def op(sample: np.ndarray) -> np.ndarray:
+        return sample.transpose((1, 2, 0))
+
+    return op
 
     pass
 
@@ -59,12 +65,19 @@ def add(val: float) -> Op:
     Add a scalar value to all array elements.
     '''
 
-    # TODO implement
+    def op(sample: np.ndarray) -> np.ndarray:
+        sample += val
+        return sample
 
-    pass
+    return op
 
 def mul(val: float) -> Op:
     '''
     Multiply all array elements by the given scalar.
     '''
 
+    def op(sample: np.ndarray) -> np.ndarray:
+        sample *= val
+        return sample
+
+    return op

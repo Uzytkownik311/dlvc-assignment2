@@ -49,5 +49,6 @@ class TestPets(unittest.TestCase):
         # cv.imwrite('my_little_sweet_blue_dog.png', my_little_sweet_blue_dog)
         # cv.imwrite('my_little_sweet_red_dog.png', my_little_sweet_red_dog)
 
+
 if __name__ == "__main__":
     unittest.main()
