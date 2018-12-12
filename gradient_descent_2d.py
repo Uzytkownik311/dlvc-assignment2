@@ -9,6 +9,7 @@ from math import floor
 
 Vec2 = namedtuple('Vec2', ['x1', 'x2'])
 
+
 class Fn:
     '''
     A 2D function evaluated on a grid.
