@@ -39,14 +39,16 @@ def vectorize() -> Op:
 
 
 def hwc2chw() -> Op:
+
     '''
     Flip a 3D array with shape HWC to shape CHW.
     '''
 
     def op(sample: np.ndarray) -> np.ndarray:
-        return sample.transpose((2, 0, 1))
+        return np.transpose(a=sample, axes=(2, 0, 1))
 
     return op
+
 
 def chw2hwc() -> Op:
     '''
@@ -54,11 +56,10 @@ def chw2hwc() -> Op:
     '''
 
     def op(sample: np.ndarray) -> np.ndarray:
-        return sample.transpose((1, 2, 0))
+        return np.transpose(a=sample, axes=(1, 2, 0))
 
     return op
 
-    pass
 
 def add(val: float) -> Op:
     '''
@@ -66,10 +67,10 @@ def add(val: float) -> Op:
     '''
 
     def op(sample: np.ndarray) -> np.ndarray:
-        sample += val
-        return sample
+        return np.add(sample, val)
 
     return op
+
 
 def mul(val: float) -> Op:
     '''
@@ -77,7 +78,6 @@ def mul(val: float) -> Op:
     '''
 
     def op(sample: np.ndarray) -> np.ndarray:
-        sample *= val
-        return sample
+        return np.multiply(sample, val)
 
     return op
