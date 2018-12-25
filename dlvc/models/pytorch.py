@@ -30,25 +30,25 @@ class CnnClassifier(Model):
         # do termine this, check the type of (one of the) parameters, which can be obtained via parameters() (there is an is_cuda flag).
         # you will want to initialize the optimizer and loss function here. note that pytorch's cross-entropy loss includes normalization so no softmax is required
 
-        pass
+        self._module = net
+        self._shape = input_shape
+        self._num_classes = (num_classes,)
+        self._learning_rate = lr
+        self._weight_decay = wd
 
     def input_shape(self) -> tuple:
         '''
         Returns the expected input shape as a tuple.
         '''
 
-        # TODO implement
-
-        pass
+        return self._shape
 
     def output_shape(self) -> tuple:
         '''
         Returns the shape of predictions for a single sample as a tuple, which is (num_classes,).
         '''
 
-        # TODO implement
-
-        pass
+        return self._num_classes
 
     def train(self, data: np.ndarray, labels: np.ndarray) -> float:
         '''
