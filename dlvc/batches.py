@@ -66,12 +66,12 @@ class BatchGenerator:
 
         if not op:
             data_shape = (dataset_size, ) + dataset[0].data.shape
-            data = np.empty(data_shape)
+            data = np.empty(data_shape, np.float32)
             data[0] = dataset[0].data
         else:
             tmp_data = op(dataset[0].data)
             data_shape = (dataset_size,) + tmp_data.shape
-            data = np.empty(data_shape, tmp_data.dtype)
+            data = np.empty(data_shape, np.float32)
             data[0] = tmp_data
 
         for i in range(1, dataset_size):

@@ -49,7 +49,7 @@ class Fn:
         '''
 
         # TODO implement
-        # you can simply round and map to integers. if so, make sure not to set eps and step_size too low
+        # you can simply round and map to integers. if so, make sure not to set eps and learning_rate too low
         # for bonus points you can implement some form of interpolation (linear should be sufficient)
 
         self.check_localization(loc)
@@ -139,7 +139,7 @@ if __name__ == '__main__':
     parser.add_argument('sx1', type=float, help='Initial value of the first argument')
     parser.add_argument('sx2', type=float, help='Initial value of the second argument')
     parser.add_argument('--eps', type=float, default=1.0, help='Epsilon for computing numeric gradients')
-    parser.add_argument('--step_size', type=float, default=10.0, help='Step size')
+    parser.add_argument('--learning_rate', type=float, default=10.0, help='SGD learning rate')
     parser.add_argument('--beta', type=float, default=0, help='Beta parameter of momentum (0 = no momentum)')
     parser.add_argument('--nesterov', action='store_true', help='Use Nesterov momentum')
     parser.add_argument('--stop_condition', type=float, default=0.001,
@@ -152,7 +152,7 @@ if __name__ == '__main__':
     vis = fn.visualize()
     loc = Vec2(args.sx1, args.sx2)
     eps = args.eps
-    step_size = args.step_size
+    learning_rate = args.learning_rate
     beta = args.beta
     nesterov = args.nesterov
     stop_condition = args.stop_condition
@@ -173,7 +173,7 @@ if __name__ == '__main__':
         else:
             grad_arr = np.array(grad(fn, current_loc, eps))
 
-        v = beta*v - step_size*grad_arr
+        v = beta*v - learning_rate*grad_arr
         old_loc = np.copy(current_loc)
         current_loc += v
 

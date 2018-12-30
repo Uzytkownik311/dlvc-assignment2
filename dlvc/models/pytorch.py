@@ -15,7 +15,7 @@ class CnnClassifier(Model):
     The cross-entropy loss and SGD are used for training.
     '''
 
-    def __init__(self, net: nn.Module, input_shape: int, num_classes: int, lr: float, wd: float):
+    def __init__(self, net: nn.Module, input_shape: tuple, num_classes: int, lr: float, wd: float):
         '''
         Ctor.
         net is the cnn to wrap. see above comments for requirements.
@@ -25,17 +25,17 @@ class CnnClassifier(Model):
         wd: weight decay to use for training.
         '''
 
-        if not np.issubdtype(type(input_shape), tuple):
+        if not type(input_shape) is tuple:
             raise TypeError("The input shape must be of type tuple, it is of type: " + str(type(input_shape)) + ".")
 
         if not num_classes > 0:
             raise ValueError("The number of classes to classify must be must be at least 1, it is: " + str(num_classes)
                              + ".")
 
-        if not np.issubdtype(type(lr), float):
+        if not type(lr) is float:
             raise TypeError("The learning rate must be of type float, it is: " + str(type(lr)) + ".")
 
-        if not np.issubdtype(type(wd), float):
+        if not type(wd) is float:
             raise TypeError("The weight decay must be of type float, it is: " + str(type(wd)) + ".")
 
         self._net = net
@@ -49,21 +49,14 @@ class CnnClassifier(Model):
 
         # check if you is available
         if cuda.is_available():
-            net.cuda()
+            self._net.cuda()
         else:
-            net.cpu()
+            self._net.cpu()
 
         # inside the train() and predict() functions you will need to know whether the network itself
         # runs on the cpu or on a gpu, and in the latter case transfer input/output tensors via cuda() and cpu().
         # do termine this, check the type of (one of the) parameters, which can be obtained via parameters() (there is an is_cuda flag).
         # you will want to initialize the optimizer and loss function here. note that pytorch's cross-entropy loss includes normalization so no softmax is required
-
-        # self._module = net
-        # self._shape = input_shape
-        # self._num_classes = (num_classes,)
-        # self._learning_rate = lr
-        # self._weight_decay = wd
-        # Initialize loss function
 
         self._loss = nn.CrossEntropyLoss()
         self._optimizer = optim.SGD(self._net.parameters(), momentum=0.9, weight_decay=self._wd, lr=self._lr, nesterov=True)
@@ -72,8 +65,6 @@ class CnnClassifier(Model):
         '''
         Returns the expected input shape as a tuple.
         '''
-
-        # return self._shape
 
         return self._input_shape
 
@@ -156,7 +147,7 @@ class CnnClassifier(Model):
         if not isinstance(data, np.ndarray):
             raise TypeError("The batch size is not np.ndarray type, but: " + str(type(data)) + ".")
 
-        if not np.issubdtype(data.dtype, float):
+        if not np.issubdtype(data.dtype, np.float32):
             raise TypeError("The data has not value type np.float32, data type is: " + str(data.dtype) + ".")
 
         if not data.shape[2] == self._input_shape[2]:

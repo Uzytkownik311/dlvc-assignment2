@@ -62,6 +62,7 @@ if __name__ == "__main__":
                         help='Path to data set.')
     parser.add_argument('--batch_size', type=int, default=128, help='Size of batch.')
     parser.add_argument('--learning_rate', type=float, default=0.1, help='Learning rate.')
+    parser.add_argument('--weight_decay_par', type=float, default=0.00001, help='Weight decay parameter.')
     parser.add_argument('--epoch_number', type=int, default=101, help='Epoch number.')
 
     args = parser.parse_args()
@@ -69,8 +70,9 @@ if __name__ == "__main__":
     path = args.fpath
     num_samples_per_batch = args.batch_size
     learning_rate = args.learning_rate
+    weight_decay = args.weight_decay_par
 
-    epochs = args.epoch_number
+    epochs = args.epochs_number
 
     trainingSet = PetsDataset(path, Subset.TRAINING)
     validationSet = PetsDataset(path, Subset.VALIDATION)
@@ -87,7 +89,7 @@ if __name__ == "__main__":
 
     cnn_net = CNN()
     #weight decay still has to be implemented
-    clf = CnnClassifier(cnn_net, (num_samples_per_batch, 3, 32, 32), 2, lr=learning_rate, wd=0.0)
+    clf = CnnClassifier(cnn_net, (num_samples_per_batch, 3, 32, 32), 2, lr=learning_rate, wd=weight_decay)
 
     for e in range(1, epochs):
         t_batch_gen = BatchGenerator(trainingSet, num_samples_per_batch, True, op)
