@@ -62,8 +62,8 @@ if __name__ == "__main__":
                         help='Path to data set.')
     parser.add_argument('--batch_size', type=int, default=128, help='Size of batch.')
     parser.add_argument('--learning_rate', type=float, default=0.1, help='Learning rate.')
-    parser.add_argument('--weight_decay_par', type=float, default=0.00001, help='Weight decay parameter.')
-    parser.add_argument('--epoch_number', type=int, default=101, help='Epoch number.')
+    parser.add_argument('--weight_decay_par', type=float, default=0.001, help='Weight decay parameter.')
+    parser.add_argument('--epoch_number', type=int, default=100, help='Epoch number.')
 
     args = parser.parse_args()
 
@@ -89,9 +89,12 @@ if __name__ == "__main__":
 
     cnn_net = CNN()
     #weight decay still has to be implemented
-    clf = CnnClassifier(cnn_net, (num_samples_per_batch, 3, 32, 32), 2, lr=learning_rate, wd=weight_decay)
+    clf = CnnClassifier(cnn_net, (num_samples_per_batch, 3, 32, 32), 2, lr=learning_rate, wd=0.0)
 
-    for e in range(1, epochs):
+    stored_train_losses = []
+    stored_validation_accuracy = []
+
+    for e in range(0, epochs):
         t_batch_gen = BatchGenerator(trainingSet, num_samples_per_batch, True, op)
         t_iter_gen = iter(t_batch_gen)
 
@@ -119,3 +122,11 @@ if __name__ == "__main__":
         print("epoch" + str(e))
         print("train loss: " + str(mean_loss) + " +- " + str(var_loss))
         print("val acc: " + str(ac))
+
+        with open('train_losses_log', 'w') as file_loss:
+            for i in stored_train_losses:
+                file_loss.write(i + '\n')
+
+        with open('validation_accuracy_log', 'w') as file_accuracy:
+            for i in stored_validation_accuracy:
+                file_accuracy.write(i + '\n')
