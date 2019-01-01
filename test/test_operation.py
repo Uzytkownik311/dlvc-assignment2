@@ -30,7 +30,7 @@ class TestOperation(unittest.TestCase):
         op = ops.rcrop(3, 3, 'reflect')
         test = op(test)
         self.assertTrue(test.shape, (9, 9))
-        # print(test)
+        print(test)
 
     def test_image_cropping_to_big_padding(self):
         test = np.arange(81).reshape((9, 9))

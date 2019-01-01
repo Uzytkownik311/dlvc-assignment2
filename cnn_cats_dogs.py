@@ -58,7 +58,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Check performance of CNN.')
 
-    parser.add_argument('--fpath', default=os.path.join(os.getcwd(), "datasets/cifar-10-batches-py"),
+    parser.add_argument('--fpath', default=os.path.join(os.getcwd(), "../datasets/cifar-10-batches-py"),
                         help='Path to data set.')
     parser.add_argument('--batch_size', type=int, default=128, help='Size of batch.')
     parser.add_argument('--learning_rate', type=float, default=0.1, help='Learning rate.')
@@ -92,23 +92,23 @@ if __name__ == "__main__":
     stored_train_losses = []
     stored_validation_accuracy = []
 
+    v_batch_gen = BatchGenerator(validationSet, num_samples_per_batch, True, op)
+    v_iter_gen = iter(v_batch_gen)
+    v_batch = next(v_iter_gen)
+
     for e in range(0, epochs):
         t_batch_gen = BatchGenerator(trainingSet, num_samples_per_batch, True, op)
         t_iter_gen = iter(t_batch_gen)
-
-        v_batch_gen = BatchGenerator(validationSet, num_samples_per_batch, True, op)
-        v_iter_gen = iter(v_batch_gen)
-        v_batch = next(v_iter_gen)
 
         losses = []
 
         for b in range(1, num_batches+1):
             t_batch = next(t_iter_gen)
-            ac.reset()
 
             current_loss = clf.train(t_batch.data, t_batch.label)
             losses.append(np.float(current_loss))
 
+        ac.reset()
         losses_np = np.asarray(losses)
         mean_loss = np.mean(losses_np)
         var_loss = np.var(losses_np)

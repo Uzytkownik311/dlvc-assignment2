@@ -109,10 +109,9 @@ def rcrop(sz: int, pad: int, pad_mode: str) -> Op:
         crop_point = (random.randrange(cropped_size[0]), random.randrange(cropped_size[1]))
 
         cropped_img = sample[crop_point[0]: crop_point[0]+sz, crop_point[1]: crop_point[1]+sz]
-        padding_size = ((pad, pad), (pad, pad))
 
         if pad > 0:
-            cropped_img = np.pad(cropped_img, padding_size, pad_mode)
+            cropped_img = np.pad(cropped_img, ((pad, pad), (pad, pad), (0, 0)), pad_mode)
 
         if cropped_img.shape[0] > origin_size[0] or cropped_img.shape[1] > origin_size[1]:
             raise ValueError("Image ofter cropping and padding has size: " + str(cropped_img.shape) +

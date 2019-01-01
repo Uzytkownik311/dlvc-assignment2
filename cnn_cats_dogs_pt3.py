@@ -29,7 +29,7 @@ class CNN(nn.Module):
         self._cn5 = nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1)
 
         self._pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
-        self._global_avg_pool = nn.AdaptiveAvgPool2d(1) # 2 is the kernel size
+        self._global_avg_pool = nn.AdaptiveAvgPool2d(1)  # 2 is the kernel size
 
         # 1*1*1 input features, 2 output features
         self._fc1 = nn.Linear(512, 2)
@@ -58,12 +58,13 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Check performance of CNN.')
 
-    parser.add_argument('--fpath', default=os.path.join(os.getcwd(), "data"),
+    parser.add_argument('--fpath', default=os.path.join(os.getcwd(), "../datasets/cifar-10-batches-py"),
                         help='Path to data set.')
     parser.add_argument('--batch_size', type=int, default=128, help='Size of batch.')
     parser.add_argument('--learning_rate', type=float, default=0.1, help='Learning rate.')
-    parser.add_argument('--weight_decay_par', type=float, default=0.001, help='Weight decay parameter.')
+    parser.add_argument('--weight_decay_par', type=float, default=0.000, help='Weight decay parameter.')
     parser.add_argument('--epoch_number', type=int, default=100, help='Epoch number.')
+    parser.add_argument('--data_augmentation', action='store_true', help='Apply data augmentation.')
 
     args = parser.parse_args()
 
@@ -71,8 +72,9 @@ if __name__ == "__main__":
     num_samples_per_batch = args.batch_size
     learning_rate = args.learning_rate
     weight_decay = args.weight_decay_par
+    data_augmentation = args.data_augmentation
 
-    epochs = args.epochs_number
+    epochs = args.epoch_number
 
     trainingSet = PetsDataset(path, Subset.TRAINING)
     validationSet = PetsDataset(path, Subset.VALIDATION)
@@ -85,32 +87,60 @@ if __name__ == "__main__":
         ops.mul(1 / 127.5)
     ])
 
+    op_flip = ops.chain([
+        ops.hflip(),
+        ops.hwc2chw(),
+        ops.add(-127.5),
+        ops.mul(1 / 127.5)
+    ])
+
+    op_crop = ops.chain([
+        ops.rcrop(20, 6, 'reflect'),
+        ops.hwc2chw(),
+        ops.add(-127.5),
+        ops.mul(1 / 127.5)
+    ])
+
     ac = Accuracy()
 
     cnn_net = CNN()
     #weight decay still has to be implemented
-    clf = CnnClassifier(cnn_net, (num_samples_per_batch, 3, 32, 32), 2, lr=learning_rate, wd=0.0)
+    clf = CnnClassifier(cnn_net, (num_samples_per_batch, 3, 32, 32), 2, lr=learning_rate, wd=weight_decay)
 
     stored_train_losses = []
     stored_validation_accuracy = []
+
+    v_batch_gen = BatchGenerator(validationSet, num_samples_per_batch, True, op)
+    v_iter_gen = iter(v_batch_gen)
+    v_batch = next(v_iter_gen)
 
     for e in range(0, epochs):
         t_batch_gen = BatchGenerator(trainingSet, num_samples_per_batch, True, op)
         t_iter_gen = iter(t_batch_gen)
 
-        v_batch_gen = BatchGenerator(validationSet, num_samples_per_batch, True, op)
-        v_iter_gen = iter(v_batch_gen)
-        v_batch = next(v_iter_gen)
+        t_iter_flip_gen = []
+        t_iter_crop_gen = []
+        if data_augmentation:
+            t_batch_flip_gen = BatchGenerator(trainingSet, num_samples_per_batch, True, op_flip)
+            t_batch_crop_gen = BatchGenerator(trainingSet, num_samples_per_batch, True, op_crop)
+            t_iter_flip_gen = iter(t_batch_flip_gen)
+            t_iter_crop_gen = iter(t_batch_crop_gen)
 
         losses = []
 
         for b in range(1, num_batches+1):
             t_batch = next(t_iter_gen)
-            ac.reset()
+
+            if data_augmentation:
+                t_batch_flip = next(t_iter_flip_gen)
+                t_batch_crop = next(t_iter_crop_gen)
+                clf.train(t_batch_crop.data, t_batch_crop.label)
+                clf.train(t_batch_flip.data, t_batch_flip.label)
 
             current_loss = clf.train(t_batch.data, t_batch.label)
             losses.append(np.float(current_loss))
 
+        ac.reset()
         losses_np = np.asarray(losses)
         mean_loss = np.mean(losses_np)
         var_loss = np.var(losses_np)
