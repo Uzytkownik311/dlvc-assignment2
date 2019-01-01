@@ -58,7 +58,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Check performance of CNN.')
 
-    parser.add_argument('--fpath', default=os.path.join(os.getcwd(), "data"),
+    parser.add_argument('--fpath', default=os.path.join(os.getcwd(), "datasets/cifar-10-batches-py"),
                         help='Path to data set.')
     parser.add_argument('--batch_size', type=int, default=128, help='Size of batch.')
     parser.add_argument('--learning_rate', type=float, default=0.1, help='Learning rate.')
@@ -89,6 +89,9 @@ if __name__ == "__main__":
     #weight decay still has to be implemented
     clf = CnnClassifier(cnn_net, (num_samples_per_batch, 3, 32, 32), 2, lr=learning_rate, wd=0.0)
 
+    stored_train_losses = []
+    stored_validation_accuracy = []
+
     for e in range(1, epochs):
         t_batch_gen = BatchGenerator(trainingSet, num_samples_per_batch, True, op)
         t_iter_gen = iter(t_batch_gen)
@@ -114,6 +117,19 @@ if __name__ == "__main__":
         ac.update(predictions, v_batch.label)
         v_accuracy = ac.accuracy()
 
+        stored_train_losses.append(str(mean_loss))
+        stored_validation_accuracy.append(str(ac))
+
         print("epoch" + str(e))
         print("train loss: " + str(mean_loss) + " +- " + str(var_loss))
         print("val acc: " + str(ac))
+
+        with open('train_losses.txt_log', 'w') as file_loss:
+            for i in stored_train_losses:
+                file_loss.write(i)
+
+        with open('validation_accuracy_log.txt', 'w') as file_accuracy:
+            for i in stored_validation_accuracy:
+                file_accuracy.write(i)
+
+

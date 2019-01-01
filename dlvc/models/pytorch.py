@@ -96,6 +96,10 @@ class CnnClassifier(Model):
         train_data = torch.from_numpy(data).float()
         train_labels = torch.from_numpy(labels).long()
 
+        if cuda.is_available():
+            train_data = train_data.to('cuda')
+            train_labels = train_labels.to('cuda')
+
         # Set the net to train() mode
 
         self._net.train()
@@ -133,12 +137,18 @@ class CnnClassifier(Model):
         self.check_correctness_of_matrix_data(data)
         _d = torch.from_numpy(data).float()
 
+        if cuda.is_available():
+            _d = _d.to('cuda')
+
         # Set the net to eval() mode
 
         self._net.eval()
         prediction = self._net(_d)
         sm = nn.Softmax()
         probabilities = sm(prediction)
+
+        if cuda.is_available():
+            probabilities = probabilities.cpu()
 
         return probabilities
 
