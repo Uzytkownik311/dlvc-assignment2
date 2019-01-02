@@ -149,6 +149,9 @@ if __name__ == "__main__":
         ac.update(predictions, v_batch.label)
         v_accuracy = ac.accuracy()
 
+        stored_train_losses.append(str(mean_loss))
+        stored_validation_accuracy.append(str(ac))
+
         print("epoch" + str(e))
         print("train loss: " + str(mean_loss) + " +- " + str(var_loss))
         print("val acc: " + str(ac))
