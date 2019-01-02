@@ -4,6 +4,7 @@ from dlvc.batches import BatchGenerator
 import dlvc.ops as ops
 from dlvc.models.pytorch import CnnClassifier
 from dlvc.test import Accuracy
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import os
@@ -65,6 +66,9 @@ if __name__ == "__main__":
     parser.add_argument('--weight_decay_par', type=float, default=0.000, help='Weight decay parameter.')
     parser.add_argument('--epoch_number', type=int, default=100, help='Epoch number.')
     parser.add_argument('--data_augmentation', action='store_true', help='Apply data augmentation.')
+    parser.add_argument('--best_model', action='store_true', help='It saves best model.')
+    parser.add_argument('--no_flip', action='store_true', help='No flipping for data augmentation.')
+    parser.add_argument('--no_crop', action='store_true', help='No cropping for data augmentation.')
 
     args = parser.parse_args()
 
@@ -73,6 +77,9 @@ if __name__ == "__main__":
     learning_rate = args.learning_rate
     weight_decay = args.weight_decay_par
     data_augmentation = args.data_augmentation
+    best_model = args.best_model
+    no_flip = args.no_flip
+    no_crop = args.no_crop
 
     epochs = args.epoch_number
 
@@ -114,6 +121,8 @@ if __name__ == "__main__":
     v_iter_gen = iter(v_batch_gen)
     v_batch = next(v_iter_gen)
 
+    best_accuracy = 0.0
+
     for e in range(0, epochs):
         t_batch_gen = BatchGenerator(trainingSet, num_samples_per_batch, True, op)
         t_iter_gen = iter(t_batch_gen)
@@ -121,10 +130,12 @@ if __name__ == "__main__":
         t_iter_flip_gen = []
         t_iter_crop_gen = []
         if data_augmentation:
-            t_batch_flip_gen = BatchGenerator(trainingSet, num_samples_per_batch, True, op_flip)
-            t_batch_crop_gen = BatchGenerator(trainingSet, num_samples_per_batch, True, op_crop)
-            t_iter_flip_gen = iter(t_batch_flip_gen)
-            t_iter_crop_gen = iter(t_batch_crop_gen)
+            if not no_flip:
+                t_batch_flip_gen = BatchGenerator(trainingSet, num_samples_per_batch, True, op_flip)
+                t_iter_flip_gen = iter(t_batch_flip_gen)
+            if not no_crop:
+                t_batch_crop_gen = BatchGenerator(trainingSet, num_samples_per_batch, True, op_crop)
+                t_iter_crop_gen = iter(t_batch_crop_gen)
 
         losses = []
 
@@ -132,10 +143,13 @@ if __name__ == "__main__":
             t_batch = next(t_iter_gen)
 
             if data_augmentation:
-                t_batch_flip = next(t_iter_flip_gen)
-                t_batch_crop = next(t_iter_crop_gen)
-                clf.train(t_batch_crop.data, t_batch_crop.label)
-                clf.train(t_batch_flip.data, t_batch_flip.label)
+                if not no_flip:
+                    t_batch_flip = next(t_iter_flip_gen)
+                    clf.train(t_batch_flip.data, t_batch_flip.label)
+
+                if not no_crop:
+                    t_batch_crop = next(t_iter_crop_gen)
+                    clf.train(t_batch_crop.data, t_batch_crop.label)
 
             current_loss = clf.train(t_batch.data, t_batch.label)
             losses.append(np.float(current_loss))
@@ -149,6 +163,11 @@ if __name__ == "__main__":
         ac.update(predictions, v_batch.label)
         v_accuracy = ac.accuracy()
 
+        if best_model:
+            if v_accuracy > best_accuracy:
+                torch.save(cnn_net.state_dict(), os.path.join(os.getcwd(), 'best_model.pth'))
+                best_accuracy = v_accuracy
+
         stored_train_losses.append(str(mean_loss))
         stored_validation_accuracy.append(str(ac))
 
@@ -156,10 +175,13 @@ if __name__ == "__main__":
         print("train loss: " + str(mean_loss) + " +- " + str(var_loss))
         print("val acc: " + str(ac))
 
-        with open('train_losses_log', 'w') as file_loss:
-            for i in stored_train_losses:
-                file_loss.write(i + '\n')
+    if best_model:
+        print('\n' + "Best model has validation accuracy equal: " + str(best_accuracy) + ".")
 
-        with open('validation_accuracy_log', 'w') as file_accuracy:
-            for i in stored_validation_accuracy:
-                file_accuracy.write(i + '\n')
+    with open('train_losses_log', 'w') as file_loss:
+        for i in stored_train_losses:
+            file_loss.write(i + '\n')
+
+    with open('validation_accuracy_log', 'w') as file_accuracy:
+        for i in stored_validation_accuracy:
+            file_accuracy.write(i + '\n')

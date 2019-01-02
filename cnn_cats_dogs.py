@@ -124,12 +124,10 @@ if __name__ == "__main__":
         print("train loss: " + str(mean_loss) + " +- " + str(var_loss))
         print("val acc: " + str(ac))
 
-        with open('train_losses_log', 'w') as file_loss:
-            for i in stored_train_losses:
-                file_loss.write(i + '\n')
+    with open('train_losses_log', 'w') as file_loss:
+        for i in stored_train_losses:
+            file_loss.write(i + '\n')
 
-        with open('validation_accuracy_log', 'w') as file_accuracy:
-            for i in stored_validation_accuracy:
-                file_accuracy.write(i + '\n')
-
-
+    with open('validation_accuracy_log', 'w') as file_accuracy:
+        for i in stored_validation_accuracy:
+            file_accuracy.write(i + '\n')
