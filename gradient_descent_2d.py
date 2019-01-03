@@ -33,7 +33,6 @@ class Fn:
         Return a visualization as a color image.
         Use the result to visualize the progress of gradient descent.
         '''
-
         vis = self._fn - self._fn.min()
         vis /= self._fn.max()
         vis *= 255
@@ -48,7 +47,6 @@ class Fn:
         Raises ValueError if loc is out of bounds.
         '''
 
-        # TODO implement
         # you can simply round and map to integers. if so, make sure not to set eps and learning_rate too low
         # for bonus points you can implement some form of interpolation (linear should be sufficient)
 
@@ -87,8 +85,6 @@ def grad(fn: Fn, loc: Vec2, eps: float) -> Vec2:
     using the given epsilon. See lecture 5 slides.
     Raises ValueError if loc is out of bounds of fn or if eps <= 0.
     '''
-
-    # TODO implement one of the two versions presented in the lecture
 
     fn.check_localization(loc)
     if eps <= 0:
@@ -161,11 +157,10 @@ if __name__ == '__main__':
 
     cv2.namedWindow('Progress', cv2.WINDOW_NORMAL)
     cv2.resizeWindow('Progress', 800, 800)
-
     current_loc = loc
+
     v = np.zeros(2)
     while True:
-        # TODO implement normal gradient descent, with momentum, and with nesterov momentum depending on the arguments (see lecture 4 slides)
         # visualize each iteration by drawing on vis using e.g. cv2.line()
         # break out of loop once done
         if nesterov:

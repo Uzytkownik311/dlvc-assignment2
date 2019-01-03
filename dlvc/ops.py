@@ -89,7 +89,6 @@ def hflip() -> Op:
     Flip arrays with shape HWC horizontally with a probability of 0.5.
     '''
 
-    # TODO implement (numpy.flip will be helpful)
     return np.fliplr
 
 
@@ -101,7 +100,6 @@ def rcrop(sz: int, pad: int, pad_mode: str) -> Op:
     Raises ValueError if sz exceeds the array width/height after padding.
     '''
 
-    # TODO implement
     # https://docs.scipy.org/doc/numpy-1.15.1/reference/generated/numpy.pad.html will be helpful
     def op(sample: np.ndarray) -> np.ndarray:
         origin_size = sample.shape

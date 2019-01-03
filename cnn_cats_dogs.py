@@ -31,7 +31,7 @@ class CNN(nn.Module):
         self._pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
         self._global_avg_pool = nn.AdaptiveAvgPool2d(1) # 2 is the kernel size
 
-        # 1*1*1 input features, 2 output features
+        # 512*1*1 input features, 2 output features
         self._fc1 = nn.Linear(512, 2)
 
     def forward(self, data):
