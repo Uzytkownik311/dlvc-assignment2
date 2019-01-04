@@ -10,7 +10,6 @@ import os
 import unittest
 
 
-
 class TestBatchGenerator(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(TestBatchGenerator, self).__init__(*args, **kwargs)

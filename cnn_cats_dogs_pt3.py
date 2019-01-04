@@ -5,62 +5,125 @@ import dlvc.ops as ops
 from dlvc.models.pytorch import CnnClassifier
 from dlvc.test import Accuracy
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import os
 import numpy as np
+from cnn_cats_dogs import CNN
+
+'''
+Finetuning torchvision models
+https://pytorch.org/tutorials/beginner/finetuning_torchvision_models_tutorial.html
+'''
+# from __future__ import print_function
+# from __future__ import division
+import torch.nn as nn
+from torchvision import models
 
 
-class CNN(nn.Module):
+def set_parameter_requires_grad(model, feature_extracting):
+    if feature_extracting:
+        for param in model.parameters():
+            param.requires_grad = False
 
-    def __init__(self):
-        super(CNN, self).__init__()
 
-        # Layer 1, images are 32x32
-        # Input channels = 3, output channels = 32
-        # Padding for stride = 1 is calculated by (K-1)/2
-        self._cn1 = nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1)
-        # Layer 2, after pooling images are 16x16
-        self._cn2 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
-        # Layer 3, after pooling images are 8x8
-        self._cn3 = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
-        # Layer 4, after pooling images are 4x4 - with padding 6x6
-        self._cn4 = nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1)
-        # Layer 4, after pooling images are 2x2 - with padding 4x4
-        self._cn5 = nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1)
+def initialize_model(model_name: str, num_classes: int, feature_extract: bool, use_pretrained: bool=True):
+    # Initialize these variables which will be set in this if statement. Each of these
+    #   variables is model specific.
+    model_ft = None
+    input_size = 0
+    if model_name == "cnn":
+        model_ft = CNN()
+        set_parameter_requires_grad(model_ft, False)
+        num_ftrs = model_ft._fc1.in_features
+        model_ft._fc1 = nn.Linear(num_ftrs, num_classes)
+        input_size = 32
 
-        self._pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
-        self._global_avg_pool = nn.AdaptiveAvgPool2d(1)  # 2 is the kernel size
+    elif model_name == "resnet":
+        """ Resnet18
+        """
+        model_ft = models.resnet18(pretrained=use_pretrained)
+        set_parameter_requires_grad(model_ft, feature_extract)
+        num_ftrs = model_ft.fc.in_features
+        model_ft.fc = nn.Linear(num_ftrs, num_classes)
+        input_size = 224
 
-        # 512*1*1 input features, 2 output features
-        self._fc1 = nn.Linear(512, 2)
+    elif model_name == "alexnet":
+        """ Alexnet
+        """
+        model_ft = models.alexnet(pretrained=use_pretrained)
+        set_parameter_requires_grad(model_ft, feature_extract)
+        num_ftrs = model_ft.classifier[6].in_features
+        model_ft.classifier[6] = nn.Linear(num_ftrs,num_classes)
+        input_size = 224
 
-    def forward(self, data):
-        data = F.relu(self._cn1(data))
-        data = self._pool(data)
-        data = F.relu(self._cn2(data))
-        data = self._pool(data)
-        data = F.relu(self._cn3(data))
-        data = self._pool(data)
-        data = F.relu(self._cn4(data))
-        data = self._pool(data)
-        data = F.relu(self._cn5(data))
-        # global average
-        data = self._global_avg_pool(data)
-        data = data.view(-1, 512*1*1)
-        data = self._fc1(data)
+    elif model_name == "vgg":
+        """ VGG11_bn
+        """
+        model_ft = models.vgg11_bn(pretrained=use_pretrained)
+        set_parameter_requires_grad(model_ft, feature_extract)
+        num_ftrs = model_ft.classifier[6].in_features
+        model_ft.classifier[6] = nn.Linear(num_ftrs,num_classes)
+        input_size = 224
 
-        return data
+    elif model_name == "squeezenet":
+        """ Squeezenet
+        """
+        model_ft = models.squeezenet1_0(pretrained=use_pretrained)
+        set_parameter_requires_grad(model_ft, feature_extract)
+        model_ft.classifier[1] = nn.Conv2d(512, num_classes, kernel_size=(1, 1), stride=(1, 1))
+        model_ft.num_classes = num_classes
+        input_size = 224
+
+    elif model_name == "densenet":
+        """ Densenet
+        """
+        model_ft = models.densenet121(pretrained=use_pretrained)
+        set_parameter_requires_grad(model_ft, feature_extract)
+        num_ftrs = model_ft.classifier.in_features
+        model_ft.classifier = nn.Linear(num_ftrs, num_classes)
+        input_size = 224
+
+    elif model_name == "inception":
+        """ Inception v3
+        Be careful, expects (299,299) sized images and has auxiliary output
+        """
+        model_ft = models.inception_v3(pretrained=use_pretrained)
+        set_parameter_requires_grad(model_ft, feature_extract)
+        # Handle the auxilary net
+        num_ftrs = model_ft.AuxLogits.fc.in_features
+        model_ft.AuxLogits.fc = nn.Linear(num_ftrs, num_classes)
+        # Handle the primary net
+        num_ftrs = model_ft.fc.in_features
+        model_ft.fc = nn.Linear(num_ftrs,num_classes)
+        input_size = 299
+
+    else:
+        print("Invalid model name, exiting...")
+        exit()
+
+    return model_ft, input_size
+
+
+def data_transformation(input_dim: int, d_a: bool, n_c: bool, n_f: bool):
+    if d_a:
+        if not n_c:
+            op = ops.chain([ops.rcrop(32, 6, 'reflect'), ops.hwc2chw(), ops.add(-127.5), ops.mul(1 / 127.5), ops.resize(input_dim)])
+        if not n_f:
+            op = ops.chain([ops.hflip(), ops.hwc2chw(), ops.add(-127.5), ops.mul(1 / 127.5), ops.resize(input_dim)])
+    else:
+        op = ops.chain([ops.hwc2chw(), ops.add(-127.5), ops.mul(1 / 127.5), ops.resize(input_dim)])
+
+    return op
 
 
 if __name__ == "__main__":
 
     import argparse
 
-    parser = argparse.ArgumentParser(description='Check performance of CNN.')
-
+    parser = argparse.ArgumentParser(description='Check performance using different models.')
+    # The store_true option automatically creates a default value of False
     parser.add_argument('--fpath', default=os.path.join(os.getcwd(), "../datasets/cifar-10-batches-py"),
                         help='Path to data set.')
+    parser.add_argument('model', type=str, default='cnn', help='Type of model.')
     parser.add_argument('--batch_size', type=int, default=128, help='Size of batch.')
     parser.add_argument('--learning_rate', type=float, default=0.1, help='Learning rate.')
     parser.add_argument('--weight_decay_par', type=float, default=0.000, help='Weight decay parameter.')
@@ -73,6 +136,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     path = args.fpath
+    net = args.model
     num_samples_per_batch = args.batch_size
     learning_rate = args.learning_rate
     weight_decay = args.weight_decay_par
@@ -88,31 +152,15 @@ if __name__ == "__main__":
 
     num_batches = int(np.ceil(len(trainingSet)/num_samples_per_batch))
 
-    op = ops.chain([
-        ops.hwc2chw(),
-        ops.add(-127.5),
-        ops.mul(1 / 127.5)
-    ])
-
-    op_flip = ops.chain([
-        ops.hflip(),
-        ops.hwc2chw(),
-        ops.add(-127.5),
-        ops.mul(1 / 127.5)
-    ])
-
-    op_crop = ops.chain([
-        ops.rcrop(20, 6, 'reflect'),
-        ops.hwc2chw(),
-        ops.add(-127.5),
-        ops.mul(1 / 127.5)
-    ])
-
     ac = Accuracy()
+    model_type, input_size = initialize_model(net, num_classes=2, feature_extract=True, use_pretrained=True)
+    op = data_transformation(input_size, data_augmentation, no_crop, no_flip)
 
-    cnn_net = CNN()
     #weight decay still has to be implemented
-    clf = CnnClassifier(cnn_net, (num_samples_per_batch, 3, 32, 32), 2, lr=learning_rate, wd=weight_decay)
+    if input_size == 299:
+        clf = CnnClassifier(model_type, (num_samples_per_batch, 3, input_size, input_size), 2, lr=learning_rate, wd=weight_decay, is_inception=True)
+    else:
+        clf = CnnClassifier(model_type, (num_samples_per_batch, 3, input_size, input_size), 2, lr=learning_rate, wd=weight_decay)
 
     stored_train_losses = []
     stored_validation_accuracy = []
@@ -127,30 +175,10 @@ if __name__ == "__main__":
         t_batch_gen = BatchGenerator(trainingSet, num_samples_per_batch, True, op)
         t_iter_gen = iter(t_batch_gen)
 
-        t_iter_flip_gen = []
-        t_iter_crop_gen = []
-        if data_augmentation:
-            if not no_flip:
-                t_batch_flip_gen = BatchGenerator(trainingSet, num_samples_per_batch, True, op_flip)
-                t_iter_flip_gen = iter(t_batch_flip_gen)
-            if not no_crop:
-                t_batch_crop_gen = BatchGenerator(trainingSet, num_samples_per_batch, True, op_crop)
-                t_iter_crop_gen = iter(t_batch_crop_gen)
-
         losses = []
 
         for b in range(1, num_batches+1):
             t_batch = next(t_iter_gen)
-
-            if data_augmentation:
-                if not no_flip:
-                    t_batch_flip = next(t_iter_flip_gen)
-                    clf.train(t_batch_flip.data, t_batch_flip.label)
-
-                if not no_crop:
-                    t_batch_crop = next(t_iter_crop_gen)
-                    clf.train(t_batch_crop.data, t_batch_crop.label)
-
             current_loss = clf.train(t_batch.data, t_batch.label)
             losses.append(np.float(current_loss))
 
@@ -165,7 +193,7 @@ if __name__ == "__main__":
 
         if best_model:
             if v_accuracy > best_accuracy:
-                torch.save(cnn_net.state_dict(), os.path.join(os.getcwd(), 'best_model.pth'))
+                torch.save(net.state_dict(), os.path.join(os.getcwd(), net+'_best_model.pth'))
                 best_accuracy = v_accuracy
 
         stored_train_losses.append(str(mean_loss))

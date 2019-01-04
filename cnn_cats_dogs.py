@@ -29,7 +29,7 @@ class CNN(nn.Module):
         self._cn5 = nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1)
 
         self._pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
-        self._global_avg_pool = nn.AdaptiveAvgPool2d(1) # 2 is the kernel size
+        self._global_avg_pool = nn.AdaptiveAvgPool2d(1)  # 2 is the kernel size
 
         # 512*1*1 input features, 2 output features
         self._fc1 = nn.Linear(512, 2)
@@ -50,7 +50,6 @@ class CNN(nn.Module):
         data = self._fc1(data)
 
         return data
-
 
 if __name__ == "__main__":
 
