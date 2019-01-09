@@ -192,7 +192,7 @@ if __name__ == "__main__":
 
         if best_model:
             if v_accuracy > best_accuracy:
-                torch.save(net.state_dict(), os.path.join(os.getcwd(), net+'_best_model.pth'))
+                torch.save(model_type.state_dict(), os.path.join(os.getcwd(), net+'_best_model.pth'))
                 best_accuracy = v_accuracy
 
         stored_train_losses.append(str(mean_loss))
