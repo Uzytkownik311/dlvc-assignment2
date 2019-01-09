@@ -91,10 +91,13 @@ def hflip() -> Op:
     Random.random() returns a number < 0.5 with a prob of 49.999%
     '''
 
-    if random.random() < 0.5:
-        return np.fliplr
-    else:
-        pass
+    def op(sample: np.ndarray) -> np.ndarray:
+        if random.random() < 0.5:
+            return np.fliplr(sample)
+        else:
+            return sample
+
+    return op
 
 
 def rcrop(sz: int, pad: int, pad_mode: str) -> Op:
