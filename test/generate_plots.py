@@ -118,5 +118,6 @@ def plot_loss_accuracy_different_models():
     l_res = plt.plot(l_resnet, 'green')
     plt.legend([l_cnn, l_alex, l_res], labels=['CNN', 'AlexNet', 'ResNet'], loc='upper right')
 
+
 plot_loss_accuracy_different_models()
 x=0

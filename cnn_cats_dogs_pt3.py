@@ -182,7 +182,6 @@ if __name__ == "__main__":
             current_loss = clf.train(t_batch.data, t_batch.label)
             losses.append(np.float(current_loss))
 
-        ac.reset()
         losses_np = np.asarray(losses)
         mean_loss = np.mean(losses_np)
         var_loss = np.var(losses_np)
