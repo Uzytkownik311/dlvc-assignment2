@@ -152,7 +152,6 @@ if __name__ == "__main__":
 
     num_batches = int(np.ceil(len(trainingSet)/num_samples_per_batch))
 
-    ac = Accuracy()
     model_type, input_size = initialize_model(net, num_classes=2, feature_extract=True, use_pretrained=True)
     op = data_transformation(input_size, data_augmentation, no_crop, no_flip)
 
@@ -172,6 +171,7 @@ if __name__ == "__main__":
     best_accuracy = 0.0
 
     for e in range(0, epochs):
+        ac = Accuracy()
         t_batch_gen = BatchGenerator(trainingSet, num_samples_per_batch, True, op)
         t_iter_gen = iter(t_batch_gen)
 
@@ -181,13 +181,13 @@ if __name__ == "__main__":
             t_batch = next(t_iter_gen)
             current_loss = clf.train(t_batch.data, t_batch.label)
             losses.append(np.float(current_loss))
+            predictions = clf.predict(v_batch.data)
+            predictions = predictions.detach().numpy()
+            ac.update(predictions, v_batch.label)
 
         losses_np = np.asarray(losses)
         mean_loss = np.mean(losses_np)
         var_loss = np.var(losses_np)
-        predictions = clf.predict(v_batch.data)
-        predictions = predictions.detach().numpy()
-        ac.update(predictions, v_batch.label)
         v_accuracy = ac.accuracy()
 
         if best_model:
