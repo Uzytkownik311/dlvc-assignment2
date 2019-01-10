@@ -82,8 +82,6 @@ if __name__ == "__main__":
         ops.mul(1 / 127.5)
     ])
 
-    ac = Accuracy()
-
     cnn_net = CNN()
     #weight decay still has to be implemented
     clf = CnnClassifier(cnn_net, (num_samples_per_batch, 3, 32, 32), 2, lr=learning_rate, wd=0.0)
@@ -96,6 +94,7 @@ if __name__ == "__main__":
     v_batch = next(v_iter_gen)
 
     for e in range(0, epochs):
+        ac = Accuracy()
         t_batch_gen = BatchGenerator(trainingSet, num_samples_per_batch, True, op)
         t_iter_gen = iter(t_batch_gen)
 
@@ -103,16 +102,15 @@ if __name__ == "__main__":
 
         for b in range(1, num_batches+1):
             t_batch = next(t_iter_gen)
-
             current_loss = clf.train(t_batch.data, t_batch.label)
             losses.append(np.float(current_loss))
+            predictions = clf.predict(v_batch.data)
+            predictions = predictions.detach().numpy()
+            ac.update(predictions, v_batch.label)
 
         losses_np = np.asarray(losses)
         mean_loss = np.mean(losses_np)
         var_loss = np.var(losses_np)
-        predictions = clf.predict(v_batch.data)
-        predictions = predictions.detach().numpy()
-        ac.update(predictions, v_batch.label)
         v_accuracy = ac.accuracy()
 
         stored_train_losses.append(str(mean_loss))

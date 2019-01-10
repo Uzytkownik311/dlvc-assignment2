@@ -118,6 +118,31 @@ def plot_loss_accuracy_different_models():
     l_res = plt.plot(l_resnet, 'green')
     plt.legend([l_cnn, l_alex, l_res], labels=['CNN', 'AlexNet', 'ResNet'], loc='upper right')
 
+def plot_loss_modified_accuracy():
+    l, a = read_loss_accuracy('second_part')
+    l_5, a_5 = read_loss_accuracy('data_augmentation_and_decay_10^-5')
+    l_resnet_wo, a_resnet_wo = read_loss_accuracy('transfer_learning\\resnet_wo')
+    l_resnet_da_wd, a_resnet_da_wd = read_loss_accuracy('transfer_learning\\resnet')
+    plt.figure()
+    ax = plt.subplot()
+    ax.set_title('Validation accuracy with modified test.py', fontsize=14, fontweight='bold')
+    ax.set_xlabel('epochs', fontsize=9, fontweight='bold')
+    a_cnn = plt.plot(a, 'red')
+    a_l5 = plt.plot(a_5, 'brown', linestyle=':')
+    a_res_d_w = plt.plot(a_resnet_da_wd, 'lightblue')
+    a_res_wo = plt.plot(a_resnet_wo, 'green')
+    plt.legend([a_cnn, a_l5, a_res_wo, a_res_d_w], labels=['CNN', 'CNN DA + WD: 10^-5', 'ResNet', 'ResNet + WD: 10^-5'], loc='upper right')
 
-plot_loss_accuracy_different_models()
+    plt.figure()
+    ax = plt.subplot()
+    ax.set_title('Training loss with modified test.py', fontsize=14, fontweight='bold')
+    ax.set_xlabel('epochs', fontsize=9, fontweight='bold')
+    l_cnn = plt.plot(l, 'red')
+    l_l5 = plt.plot(l_5, 'brown', linestyle=':')
+    l_res_d_w = plt.plot(l_resnet_da_wd, 'lightblue')
+    l_res_wo = plt.plot(l_resnet_wo, 'green')
+    plt.legend([l_cnn, l_l5, l_res_wo, l_res_d_w], labels=['CNN', 'CNN DA + WD: 10^-5', 'ResNet', 'ResNet + WD: 10^-5'], loc='upper right')
+
+
+plot_loss_modified_accuracy()
 x=0
