@@ -138,5 +138,8 @@ class Accuracy(PerformanceMeasure):
         Returns 0 if no data is available (after resets).
         '''
 
-        self.accuracy_value = self.true_predictions/len(self.prediction)
+        if self.prediction:
+            self.accuracy_value = self.true_predictions/len(self.prediction)
+        else:
+            self.accuracy_value = 0.
         return self.accuracy_value
