@@ -15,7 +15,7 @@ class CnnClassifier(Model):
     The cross-entropy loss and SGD are used for training.
     '''
 
-    def __init__(self, net: nn.Module, input_shape: tuple, num_classes: int, lr: float, wd: float):
+    def __init__(self, net: nn.Module, input_shape: tuple, num_classes: int, lr: float, wd: float, feature_extract: bool=True, is_inception: bool=False):
         '''
         Ctor.
         net is the cnn to wrap. see above comments for requirements.
@@ -43,6 +43,7 @@ class CnnClassifier(Model):
         self._num_classes = num_classes
         self._lr = lr
         self._wd = wd
+        self._is_inception = is_inception
 
         self._trained_data = None
         self._trained_labels = None
@@ -59,7 +60,21 @@ class CnnClassifier(Model):
         # you will want to initialize the optimizer and loss function here. note that pytorch's cross-entropy loss includes normalization so no softmax is required
 
         self._loss = nn.CrossEntropyLoss()
-        self._optimizer = optim.SGD(self._net.parameters(), momentum=0.9, weight_decay=self._wd, lr=self._lr, nesterov=True)
+
+        params_to_update = net.parameters()
+        print("Params to learn:")
+        if feature_extract:
+            params_to_update = []
+            for name, param in net.named_parameters():
+                if param.requires_grad:
+                    params_to_update.append(param)
+                    print("\t", name)
+        else:
+            for name, param in net.named_parameters():
+                if param.requires_grad:
+                    print("\t", name)
+
+        self._optimizer = optim.SGD(params_to_update, momentum=0.9, weight_decay=self._wd, lr=self._lr, nesterov=True)
 
     def input_shape(self) -> tuple:
         '''
@@ -109,9 +124,16 @@ class CnnClassifier(Model):
         self._optimizer.zero_grad()
 
         # Forward pass and backward pass, optimize
+        if self._is_inception:
+            # From https://discuss.pytorch.org/t/how-to-optimize-inception-model-with-auxiliary-classifiers/7958
+            outputs, aux_outputs = self._net(train_data)
+            loss1 = self._loss(outputs, train_labels)
+            loss2 = self._loss(aux_outputs, train_labels)
+            loss_train = loss1 + 0.4 * loss2
+        else:
+            outputs = self._net(train_data)
+            loss_train = self._loss(outputs, train_labels)
 
-        output = self._net(train_data)
-        loss_train = self._loss(output, train_labels)
         loss_train.backward()
         self._optimizer.step()
 

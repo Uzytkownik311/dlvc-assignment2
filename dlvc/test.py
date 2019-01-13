@@ -60,20 +60,15 @@ class Accuracy(PerformanceMeasure):
         '''
         Ctor.
         '''
-        self.prediction = None
-        self.target = None
-        self.accuracy_value = 0.
-        self.true_predictions = 0
+        self.reset()
 
     def reset(self):
         '''
         Resets the internal state.
         '''
+        self._number_correct = 0
+        self._number_total = 0
 
-        self.prediction = None
-        self.target = None
-        self.accuracy_value = 0.
-        self.true_predictions = 0
 
     def update(self, prediction: np.ndarray, target: np.ndarray):
         '''
@@ -89,20 +84,16 @@ class Accuracy(PerformanceMeasure):
         if not (prediction.shape[0] == target.shape[0]):
             raise ValueError("Prediction must have same number of values as target.")
 
-        self.prediction = prediction
-        self.target = target
+        self._number_total += prediction.shape[0]
+        self._number_correct += np.sum(np.argmax(prediction, 1) == target)
 
-        outcome = np.argmax(self.prediction, axis=1)
-        for oc, tr in zip(outcome, self.target):
-            if oc == tr:
-                self.true_predictions += 1
 
     def __str__(self):
         '''
         Return a string representation of the performance.
         '''
 
-        return 'accuracy: ' + str(self.accuracy_value)
+        return 'accuracy: ' + str(self.accuracy())
 
     def __lt__(self, other) -> bool:
         '''
@@ -110,11 +101,11 @@ class Accuracy(PerformanceMeasure):
         Raises TypeError if the types of both measures differ.
         '''
 
-        if not np.issubdtype(type(self.accuracy_value), np.floating) and np.issubdtype(type(other), np.floating):
+        if not np.issubdtype(type(self.accuracy()), np.floating) and np.issubdtype(type(other), np.floating):
             raise TypeError("Accuracy values have different type. Left side type: " +
-                            str(type(self.accuracy_value)) + ", right side: " + str(type(self.accuracy_value)) + ".")
+                            str(type(self.accuracy())) + ", right side: " + str(type(self.accuracy())) + ".")
 
-        if self.accuracy_value < other:
+        if self.accuracy() < other:
             return True
         return False
 
@@ -124,11 +115,11 @@ class Accuracy(PerformanceMeasure):
         Raises TypeError if the types of both measures differ.
         '''
 
-        if not np.issubdtype(type(self.accuracy_value), np.floating) and np.issubdtype(type(other), np.floating):
+        if not np.issubdtype(type(self.accuracy()), np.floating) and np.issubdtype(type(other), np.floating):
             raise TypeError("Accuracy values have different type. Left side type: " +
-                            str(type(self.accuracy_value)) + ", right side: " + str(type(self.accuracy_value)) + ".")
+                            str(type(self.accuracy())) + ", right side: " + str(type(self.accuracy())) + ".")
 
-        if self.accuracy_value > other:
+        if self.accuracy() > other:
             return True
         return False
 
@@ -138,8 +129,8 @@ class Accuracy(PerformanceMeasure):
         Returns 0 if no data is available (after resets).
         '''
 
-        if self.prediction:
-            self.accuracy_value = self.true_predictions/len(self.prediction)
+        if self._number_total == 0:
+            return 0.0
         else:
-            self.accuracy_value = 0.
-        return self.accuracy_value
+            return self._number_correct/self._number_total
+
